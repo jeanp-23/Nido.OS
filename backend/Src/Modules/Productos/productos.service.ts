@@ -1,3 +1,4 @@
+// backend/src/Modules/Productos/productos.service.ts
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -11,18 +12,30 @@ export class ProductosService {
     private readonly productoRepository: Repository<Producto>,
   ) {}
 
-  async crear(createProductoDto: CreateProductoDto) {
-    // Aquí implementaremos la lógica del SKU paramétrico más adelante
-    const nuevoProducto = this.productoRepository.create(createProductoDto);
+  async crear(createProductoDto: CreateProductoDto): Promise<Producto> {
+    const { tipo, estilo, talla, color } = createProductoDto;
+
+    // Generar consecutivo basado en la cantidad de productos actuales en la base de datos
+    const totalProductos = await this.productoRepository.count();
+    const consecutivoNum = totalProductos + 1;
+    const consecutivoStr = String(consecutivoNum).padStart(4, '0');
+
+    // Construcción estricta del SKU paramétrico: [TIPO]-[ESTILO]-[TALLA]-[COLOR]-[CONSECUTIVO]
+    const sku = `${tipo.toUpperCase()}-${estilo.toUpperCase()}-${talla.toUpperCase()}-${color.toUpperCase()}-${consecutivoStr}`;
+
+    const nuevoProducto = this.productoRepository.create({
+      ...createProductoDto,
+      sku,
+      consecutivo: consecutivoNum,
+    });
+
     return await this.productoRepository.save(nuevoProducto);
   }
 
-  async findAll() {
+  async findAll(): Promise<Producto[]>{
     return await this.productoRepository.find();
   }
 }
-
-
 
 
 
