@@ -13,7 +13,7 @@ export class Producto {
   tipo: string; // Ej: CAM, PAN, VES[cite: 14]
 
   @Column({ length: 50 })
-  estilo: string; // Ej: CAS, SLI, URB[cite: 14]
+  genero: string; // Ej: CAS, SLI, URB[cite: 14]
 
   @Column({ length: 10 })
   talla: string; // Ej: XS, SM, MD, LG, XL[cite: 14]

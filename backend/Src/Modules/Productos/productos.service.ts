@@ -13,7 +13,7 @@ export class ProductosService {
   ) {}
 
   async crear(createProductoDto: CreateProductoDto): Promise<Producto> {
-    const { tipo, estilo, talla, color } = createProductoDto;
+    const { tipo, genero, talla, color } = createProductoDto;
 
     // Contar los productos actuales en la base de datos para el consecutivo
     const totalProductos = await this.productoRepository.count();
@@ -21,7 +21,7 @@ export class ProductosService {
     const consecutivoStr = String(consecutivoNum).padStart(4, '0');
 
     // Construcción estricta del SKU paramétrico
-    const sku = `${tipo.toUpperCase()}-${estilo.toUpperCase()}-${talla.toUpperCase()}-${color.toUpperCase()}-${consecutivoStr}`;
+    const sku = `${tipo.toUpperCase()}-${genero.toUpperCase()}-${talla.toUpperCase()}-${color.toUpperCase()}-${consecutivoStr}`;
 
     const nuevoProducto = this.productoRepository.create({
       ...createProductoDto,

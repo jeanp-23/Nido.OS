@@ -1,36 +1,30 @@
-// En tu archivo backend/src/Modules/Productos/dto/create-producto.dto.ts
-import { IsString, IsNumber, IsNotEmpty, Length, Min } from 'class-validator';
+import { IsString, IsNumber, IsNotEmpty, IsPositive } from 'class-validator';
 
-export class CreateProductoDto { // <-- Asegúrate de incluir 'export'
+export class CreateProductoDto {
   @IsString()
-  @IsNotEmpty()
-  @Length(3, 3)
+  @IsNotEmpty({ message: 'El tipo de producto es obligatorio' })
   tipo: string;
 
   @IsString()
-  @IsNotEmpty()
-  @Length(3, 3)
-  estilo: string;
+  @IsNotEmpty({ message: 'El género es obligatorio' })
+  genero: string;
 
   @IsString()
-  @IsNotEmpty()
-  @Length(2, 3)
+  @IsNotEmpty({ message: 'La talla es obligatoria' })
   talla: string;
 
   @IsString()
-  @IsNotEmpty()
-  @Length(3, 3)
+  @IsNotEmpty({ message: 'El color es obligatorio' })
   color: string;
 
-  @IsNumber()
-  @Min(0)
+  @IsNumber({}, { message: 'El precio de venta debe ser un número' })
+  @IsPositive({ message: 'El precio de venta debe ser mayor a cero' })
   precioVenta: number;
 
-  @IsNumber()
-  @Min(0)
+  @IsNumber({}, { message: 'El costo de adquisición debe ser un número' })
+  @IsPositive({ message: 'El costo de adquisición debe ser mayor a cero' })
   costoAdquisicion: number;
 
-  @IsNumber()
-  @Min(0)
+  @IsNumber({}, { message: 'El stock debe ser un número' })
   stock: number;
 }
