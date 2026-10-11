@@ -6,19 +6,20 @@ export class Producto {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+
   @Column({ unique: true, length: 30 })
   sku: string; // Formato paramétrico: [TIPO]-[ESTILO]-[TALLA]-[COLOR]-[CONSECUTIVO][cite: 14]
 
-  @Column({ length: 50 })
+  @Column({ length: 120 })
   tipo: string; // Ej: CAM, PAN, VES[cite: 14]
 
-  @Column({ length: 50 })
+  @Column({ length: 100 })
   genero: string; // Ej: CAS, SLI, URB[cite: 14]
 
-  @Column({ length: 10 })
+  @Column({ length: 50 })
   talla: string; // Ej: XS, SM, MD, LG, XL[cite: 14]
 
-  @Column({ length: 50 })
+  @Column({ length: 120 })
   color: string; // Ej: NEG, BLA, AZU[cite: 14]
 
   @Column({ type: 'int' })
@@ -35,7 +36,14 @@ export class Producto {
 
   @CreateDateColumn()
   createdAt: Date;
+  
+
+  
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+
+
+
 }

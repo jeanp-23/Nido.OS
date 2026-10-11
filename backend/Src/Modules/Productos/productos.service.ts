@@ -1,9 +1,9 @@
-// backend/src/Modules/Productos/productos.service.ts
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Producto } from './producto.entity';
 import { CreateProductoDto } from './dto/create-producto.dto';
+import { UpdateProductoDto } from './dto/update-producto.dto';
 
 @Injectable()
 export class ProductosService {
@@ -12,35 +12,58 @@ export class ProductosService {
     private readonly productoRepository: Repository<Producto>,
   ) {}
 
-  async crear(createProductoDto: CreateProductoDto): Promise<Producto> {
+  async create(createProductoDto: CreateProductoDto) {
     const { tipo, genero, talla, color } = createProductoDto;
-
-    // Contar los productos actuales en la base de datos para el consecutivo
-    const totalProductos = await this.productoRepository.count();
-    const consecutivoNum = totalProductos + 1;
-    const consecutivoStr = String(consecutivoNum).padStart(4, '0');
-
-    // Construcción estricta del SKU paramétrico
-    const sku = `${tipo.toUpperCase()}-${genero.toUpperCase()}-${talla.toUpperCase()}-${color.toUpperCase()}-${consecutivoStr}`;
+    
+    // Lógica para el SKU
+    const count = await this.productoRepository.count();
+    const consecutivo = count + 1;
+    const sku = `${tipo}-${genero}-${talla}-${color}-${String(consecutivo).padStart(4, '0')}`.toUpperCase();
 
     const nuevoProducto = this.productoRepository.create({
       ...createProductoDto,
       sku,
-      consecutivo: consecutivoNum,
+      consecutivo,
     });
 
     return await this.productoRepository.save(nuevoProducto);
   }
 
-  async findAll(): Promise<Producto[]> {
+  async findAll() {
     return await this.productoRepository.find();
   }
+
+  async findOne(id: string) {
+    const producto = await this.productoRepository.findOneBy({ id });
+    if (!producto) {
+      throw new NotFoundException(`El producto con ID ${id} no fue encontrado.`);
+    }
+    return producto;
+  }
+
+  // --- MÉTODOS DE MUTACIÓN NUEVOS ---
+
+  // Actualizar parcialmente un producto (PATCH)
+  async update(id: string, updateProductoDto: UpdateProductoDto) {
+    const producto = await this.productoRepository.preload({
+      id,
+      ...updateProductoDto,
+    });
+
+    if (!producto) {
+      throw new NotFoundException(`No se encontró el producto con ID: ${id}`);
+    }
+
+    return await this.productoRepository.save(producto);
+  }
+
+  // Eliminar un producto (DELETE)
+  async remove(id: string) {
+    const producto = await this.findOne(id);
+    await this.productoRepository.remove(producto);
+    return { message: `El producto con ID ${id} fue eliminado correctamente.` };
+  }
 }
-
-
-
-
-
 
 
 

@@ -1,12 +1,9 @@
-// backend/src/app.module.ts
-
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { Producto } from './Modules/Productos/producto.entity';
 import { ProductosModule } from './Modules/Productos/productos.module';
-
+import { BaulModule } from './Modules/Productos/Baul/baul.module';
 
 @Module({
   imports: [
@@ -14,13 +11,14 @@ import { ProductosModule } from './Modules/Productos/productos.module';
       type: 'postgres',
       host: 'localhost',
       port: 5432,
-      username: 'postgres', // Cambia por tu usuario de PostgreSQL
-      password: '1007602742jp23', // Cambia por tu contraseña de PostgreSQL
-      database: 'nido_os',    // Asegúrate de haber creado esta base de datos en tu gestor
-      entities: [Producto],
-      synchronize: true,      // Únicamente para desarrollo (crea tablas automáticas)
+      username: 'postgres', // Tu usuario de postgres
+      password: '1007602742jp23', // Tu contraseña
+      database: 'nido_db', // Tu base de datos
+      autoLoadEntities: true,
+      synchronize: true,
     }),
     ProductosModule,
+    BaulModule,
   ],
   controllers: [AppController],
   providers: [AppService],
