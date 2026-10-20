@@ -12,28 +12,20 @@ export class ProductosService {
     private readonly productoRepository: Repository<Producto>,
   ) {}
 
-  async create(createProductoDto: CreateProductoDto) {
-    const { tipo, genero, talla, color } = createProductoDto;
+  async create(createProductoDto: CreateProductoDto): Promise<Producto> {
+    // Instanciamos el producto directamente para evitar ambigüedades en el tipado de TypeORM
+    const nuevoProducto = this.productoRepository.create();
+    Object.assign(nuevoProducto, createProductoDto);
     
-    // Lógica para el SKU
-    const count = await this.productoRepository.count();
-    const consecutivo = count + 1;
-    const sku = `${tipo}-${genero}-${talla}-${color}-${String(consecutivo).padStart(4, '0')}`.toUpperCase();
-
-    const nuevoProducto = this.productoRepository.create({
-      ...createProductoDto,
-      sku,
-      consecutivo,
-    });
-
-    return await this.productoRepository.save(nuevoProducto);
+    const saved = await this.productoRepository.save(nuevoProducto);
+    return Array.isArray(saved) ? saved[0] : saved;
   }
 
-  async findAll() {
+  async findAll(): Promise<Producto[]> {
     return await this.productoRepository.find();
   }
 
-  async findOne(id: string) {
+  async findOne(id: string): Promise<Producto> {
     const producto = await this.productoRepository.findOneBy({ id });
     if (!producto) {
       throw new NotFoundException(`El producto con ID ${id} no fue encontrado.`);
@@ -41,32 +33,17 @@ export class ProductosService {
     return producto;
   }
 
-  // --- MÉTODOS DE MUTACIÓN NUEVOS ---
-
-  // Actualizar parcialmente un producto (PATCH)
-  async update(id: string, updateProductoDto: UpdateProductoDto) {
-    const producto = await this.productoRepository.preload({
-      id,
-      ...updateProductoDto,
-    });
-
-    if (!producto) {
-      throw new NotFoundException(`No se encontró el producto con ID: ${id}`);
-    }
-
+  async update(id: string, updateProductoDto: UpdateProductoDto): Promise<Producto> {
+    const producto = await this.findOne(id);
+    
+    // Actualizamos las propiedades permitidas
+    this.productoRepository.merge(producto, updateProductoDto);
     return await this.productoRepository.save(producto);
   }
 
-  // Eliminar un producto (DELETE)
-  async remove(id: string) {
+  async remove(id: string): Promise<{ message: string }> {
     const producto = await this.findOne(id);
     await this.productoRepository.remove(producto);
-    return { message: `El producto con ID ${id} fue eliminado correctamente.` };
+    return { message: `Producto con ID ${id} eliminado exitosamente del inventario.` };
   }
 }
-
-
-
-
-
-

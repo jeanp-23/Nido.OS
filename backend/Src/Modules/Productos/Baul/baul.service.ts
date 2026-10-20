@@ -3,7 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Baul } from './baul.entity';
 import { CreateBaulDto } from '../dto/create-baul.dto';
-import { ProductosService } from '../productos.service'; // <--- Importamos el servicio de productos
+import { AddAbonoDto } from '../dto/abono.dto'; // <--- Asegúrate de que apunte al nombre correcto de tu DTO de abono
+import { ProductosService } from '../productos.service'; // O la ruta correcta a tu servicio de productos
 
 @Injectable()
 export class BaulService {
@@ -11,13 +12,12 @@ export class BaulService {
     @InjectRepository(Baul)
     private readonly baulRepository: Repository<Baul>,
 
-    private readonly productosService: ProductosService, // <--- Inyectamos el servicio
+    private readonly productosService: ProductosService,
   ) {}
 
   async create(createBaulDto: CreateBaulDto) {
     const { nombreCliente, telefonoCliente, productosIds, abonoInicial = 0, fechaLimite } = createBaulDto;
 
-    // 1. Buscar los productos usando el servicio existente
     const productos = [];
     for (const id of productosIds) {
       try {
@@ -32,21 +32,15 @@ export class BaulService {
       throw new NotFoundException('No se encontró ninguno de los productos especificados para el baúl.');
     }
 
-    // 2. Calcular el precio total sumando el precio de venta de cada prenda
     const precioTotal = productos.reduce((acc, producto) => acc + Number(producto.precioVenta), 0);
 
-    // 3. Validar que el abono inicial no sea mayor al total
     if (abonoInicial > precioTotal) {
       throw new BadRequestException('El abono inicial no puede ser mayor al precio total del apartado.');
     }
 
-    // 4. Calcular el saldo pendiente
     const saldoPendiente = precioTotal - abonoInicial;
-
-    // 5. Determinar el estado inicial del baúl
     const estado = saldoPendiente === 0 ? 'liquidado' : 'activo';
 
-    // 6. Crear la instancia del Baúl
     const nuevoBaul = this.baulRepository.create({
       nombreCliente,
       telefonoCliente,
@@ -61,18 +55,45 @@ export class BaulService {
     return await this.baulRepository.save(nuevoBaul);
   }
 
-async findAll() {
+  async findAll() {
     return await this.baulRepository.find({ relations: { productos: true } });
   }
 
-  async findOne(id: string) {
+async findOne(id: string) {
+    // Forzamos la búsqueda asegurando que el id se pase plano
     const baul = await this.baulRepository.findOne({
-      where: { id },
+      where: { id: id as any },
       relations: { productos: true },
     });
+
     if (!baul) {
       throw new NotFoundException(`El baúl con ID ${id} no fue encontrado.`);
     }
     return baul;
+  }
+  async registrarAbono(id: string, addAbonoDto: AddAbonoDto): Promise<Baul> {
+    const { monto } = addAbonoDto;
+    
+    const baul = await this.findOne(id);
+
+    if (baul.estado === 'liquidado') {
+      throw new BadRequestException('Este apartado (baúl) ya se encuentra totalmente liquidado.');
+    }
+
+    const nuevoSaldoPendiente = Number(baul.saldoPendiente) - monto;
+    if (nuevoSaldoPendiente < 0) {
+      throw new BadRequestException(
+        `El abono excede el saldo pendiente. El saldo actual por pagar es de $${baul.saldoPendiente}`,
+      );
+    }
+
+    baul.totalAbonado = Number(baul.totalAbonado) + monto;
+    baul.saldoPendiente = nuevoSaldoPendiente;
+
+    if (baul.saldoPendiente === 0) {
+      baul.estado = 'liquidado';
+    }
+
+    return await this.baulRepository.save(baul);
   }
 }
