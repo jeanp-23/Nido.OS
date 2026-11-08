@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, LessThanOrEqual } from 'typeorm';
 import { Baul } from './baul.entity';
 import { CreateBaulDto } from '../dto/create-baul.dto';
 import { AddAbonoDto } from '../dto/abono.dto'; // <--- Asegúrate de que apunte al nombre correcto de tu DTO de abono
@@ -79,7 +79,7 @@ async findOne(id: string) {
     if (baul.estado === 'liquidado') {
       throw new BadRequestException('Este apartado (baúl) ya se encuentra totalmente liquidado.');
     }
-
+  
     const nuevoSaldoPendiente = Number(baul.saldoPendiente) - monto;
     if (nuevoSaldoPendiente < 0) {
       throw new BadRequestException(
@@ -95,5 +95,31 @@ async findOne(id: string) {
     }
 
     return await this.baulRepository.save(baul);
+  }
+  // Método para que n8n consulte los apartados próximos a vencer (ej. faltan 2 días o menos)
+  async findVencimientosProximos() {
+    const hoy = new Date();
+    const fechaLimiteAlerta = new Date();
+    fechaLimiteAlerta.setDate(hoy.getDate() + 2); // Filtra los que vencen en los próximos 2 días o ya vencieron
+
+    // Usamos operadores de TypeORM para comparar fechas en formato string/Date
+    return await this.baulRepository.find({
+      where: {
+        estado: 'activo',
+        fechaLimite: LessThanOrEqual(fechaLimiteAlerta) as any,
+      },
+      relations: { productos: true }, // Mantiene la consistencia de tu relación con los productos
+    });
+  }
+  async findByTelefono(telefonoCliente: string) {
+    const baules = await this.baulRepository.find({
+      where: { telefonoCliente },
+      relations: { productos: true },
+    });
+
+    if (!baules || baules.length === 0) {
+      throw new NotFoundException(`No se encontraron baúles activos para el teléfono ${telefonoCliente}`);
+    }
+    return baules;
   }
 }

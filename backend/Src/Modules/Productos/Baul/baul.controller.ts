@@ -17,7 +17,17 @@ export class BaulController {
     return this.baulService.findAll();
   }
 
-  // --- COLOCA ESTA RUTA ANTES DE @Get(':id') ---
+  // --- RUTAS FIJAS PRIMERO ANTES DE LOS :id ---
+  @Get('vencimientos-proximos')
+  async getVencimientosProximos() {
+    return await this.baulService.findVencimientosProximos();
+  }
+
+  @Get('cliente/:telefono')
+  async findByCliente(@Param('telefono') telefono: string) {
+    return await this.baulService.findByTelefono(telefono);
+  }
+
   @Patch(':id/abono')
   registrarAbono(
     @Param('id') id: string,
